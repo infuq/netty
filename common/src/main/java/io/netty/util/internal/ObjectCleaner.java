@@ -15,19 +15,21 @@
  */
 package io.netty.util.internal;
 
+import io.netty.util.concurrent.FastThreadLocalThread;
+
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Allows a way to register some {@link Runnable} that will executed once there are no references to the {@link Thread}
- * anymore. This typically happens once the {@link Thread} dies / completes.
+ * Allows a way to register some {@link Runnable} that will executed once there are no references to an {@link Object}
+ * anymore.
  */
-public final class ThreadCleaner {
+public final class ObjectCleaner {
 
     // This will hold a reference to the ThreadCleanerReference which will be removed once we called cleanup()
-    private static final Set<ThreadCleanerReference> LIVE_SET = new ConcurrentSet<ThreadCleanerReference>();
+    private static final Set<AtomaticCleanerReference> LIVE_SET = new ConcurrentSet<AtomaticCleanerReference>();
     private static final ReferenceQueue<Object> REFERENCE_QUEUE = new ReferenceQueue<Object>();
     private static final AtomicBoolean CLEANER_RUNNING = new AtomicBoolean(false);
 
@@ -40,8 +42,8 @@ public final class ThreadCleaner {
                 // See if we can let this thread complete.
                 while (!LIVE_SET.isEmpty()) {
                     try {
-                        ThreadCleanerReference reference =
-                                (ThreadCleanerReference) REFERENCE_QUEUE.remove();
+                        AtomaticCleanerReference reference =
+                                (AtomaticCleanerReference) REFERENCE_QUEUE.remove();
                         try {
                             reference.cleanup();
                         } finally {
@@ -63,29 +65,29 @@ public final class ThreadCleaner {
                 }
             }
             if (interrupted) {
-                // As we catched the InterruptedException above we should mark the Thread as interrupted.
+                // As we caught the InterruptedException above we should mark the Thread as interrupted.
                 Thread.currentThread().interrupt();
             }
         }
     };
 
     /**
-     * Register the given {@link Thread} for which the {@link Runnable} will be executed once there are no references
-     * to the object anymore, which typically happens once the {@link Thread} dies.
+     * Register the given {@link Object} for which the {@link Runnable} will be executed once there are no references
+     * to the object anymore.
      *
-     * This should only be used if there are no other ways to execute some cleanup once the {@link Thread} dies as
-     * it is not a cheap way to handle the cleanup.
+     * This should only be used if there are no other ways to execute some cleanup once the Object is not reachable
+     * anymore because it is not a cheap way to handle the cleanup.
      */
-    public static void register(Thread thread, Runnable cleanupTask) {
-        ThreadCleanerReference reference = new ThreadCleanerReference(thread,
+    public static void register(Object object, Runnable cleanupTask) {
+        AtomaticCleanerReference reference = new AtomaticCleanerReference(object,
                 ObjectUtil.checkNotNull(cleanupTask, "cleanupTask"));
         // Its important to add the reference to the LIVE_SET before we access CLEANER_RUNNING to ensure correct
         // behavior in multi-threaded environments.
         LIVE_SET.add(reference);
 
-        // Check if there is already
+        // Check if there is already a cleaner running.
         if (CLEANER_RUNNING.compareAndSet(false, true)) {
-            Thread cleanupThread = new Thread(CLEANER_TASK);
+            Thread cleanupThread = new FastThreadLocalThread(CLEANER_TASK);
             cleanupThread.setPriority(Thread.MIN_PRIORITY);
             // Set to null to ensure we not create classloader leaks by holding a strong reference to the inherited
             // classloader.
@@ -93,23 +95,23 @@ public final class ThreadCleaner {
             // - https://github.com/netty/netty/issues/7290
             // - https://bugs.openjdk.java.net/browse/JDK-7008595
             cleanupThread.setContextClassLoader(null);
-            cleanupThread.setName("ThreadCleanerReaper");
+            cleanupThread.setName("ReferenceCleanerThread");
 
             // This Thread is not a daemon as it will die once all references to the registered Threads will go away
             // and its important to always invoke all cleanup tasks as these may free up memory etc.
-            cleanupThread.setDaemon(true);
+            cleanupThread.setDaemon(false);
             cleanupThread.start();
         }
     }
 
-    private ThreadCleaner() {
+    private ObjectCleaner() {
         // Only contains a static method.
     }
 
-    private static final class ThreadCleanerReference extends WeakReference<Thread> {
+    private static final class AtomaticCleanerReference extends WeakReference<Object> {
         private final Runnable cleanupTask;
 
-        ThreadCleanerReference(Thread referent, Runnable cleanupTask) {
+        AtomaticCleanerReference(Object referent, Runnable cleanupTask) {
             super(referent, REFERENCE_QUEUE);
             this.cleanupTask = cleanupTask;
         }

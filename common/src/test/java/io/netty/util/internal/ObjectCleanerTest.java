@@ -21,7 +21,7 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ThreadCleanerTest {
+public class ObjectCleanerTest {
 
     private Thread temporaryThread;
 
@@ -40,7 +40,7 @@ public class ThreadCleanerTest {
             }
         });
         temporaryThread.start();
-        ThreadCleaner.register(temporaryThread, new Runnable() {
+        ObjectCleaner.register(temporaryThread, new Runnable() {
             @Override
             public void run() {
                 freeCalled.set(true);

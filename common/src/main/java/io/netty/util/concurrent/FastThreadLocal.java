@@ -17,7 +17,7 @@ package io.netty.util.concurrent;
 
 import io.netty.util.internal.InternalThreadLocalMap;
 import io.netty.util.internal.PlatformDependent;
-import io.netty.util.internal.ThreadCleaner;
+import io.netty.util.internal.ObjectCleaner;
 
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -145,7 +145,7 @@ public class FastThreadLocal<V> {
         if (!FastThreadLocalThread.willCleanupFastThreadLocals(current)) {
             // We will need to ensure we will trigger remove(InternalThreadLocalMap) so everything will be released
             // and FastThreadLocal.onRemoval(...) will be called.
-            ThreadCleaner.register(current, new Runnable() {
+            ObjectCleaner.register(current, new Runnable() {
                 @Override
                 public void run() {
                     remove(threadLocalMap);
