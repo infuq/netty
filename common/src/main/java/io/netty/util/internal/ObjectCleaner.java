@@ -28,11 +28,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class ObjectCleaner {
 
-    // This will hold a reference to the ThreadCleanerReference which will be removed once we called cleanup()
-    private static final Set<AtomaticCleanerReference> LIVE_SET = new ConcurrentSet<AtomaticCleanerReference>();
+    // This will hold a reference to the AutomaticCleanerReference which will be removed once we called cleanup()
+    private static final Set<AutomaticCleanerReference> LIVE_SET = new ConcurrentSet<AutomaticCleanerReference>();
     private static final ReferenceQueue<Object> REFERENCE_QUEUE = new ReferenceQueue<Object>();
     private static final AtomicBoolean CLEANER_RUNNING = new AtomicBoolean(false);
-
+    private static final String CLEANER_THREAD_NAME = ObjectCleaner.class.getSimpleName() + "Thread";
     private static final Runnable CLEANER_TASK = new Runnable() {
         @Override
         public void run() {
@@ -42,8 +42,8 @@ public final class ObjectCleaner {
                 // See if we can let this thread complete.
                 while (!LIVE_SET.isEmpty()) {
                     try {
-                        AtomaticCleanerReference reference =
-                                (AtomaticCleanerReference) REFERENCE_QUEUE.remove();
+                        AutomaticCleanerReference reference =
+                                (AutomaticCleanerReference) REFERENCE_QUEUE.remove();
                         try {
                             reference.cleanup();
                         } finally {
@@ -79,7 +79,7 @@ public final class ObjectCleaner {
      * anymore because it is not a cheap way to handle the cleanup.
      */
     public static void register(Object object, Runnable cleanupTask) {
-        AtomaticCleanerReference reference = new AtomaticCleanerReference(object,
+        AutomaticCleanerReference reference = new AutomaticCleanerReference(object,
                 ObjectUtil.checkNotNull(cleanupTask, "cleanupTask"));
         // Its important to add the reference to the LIVE_SET before we access CLEANER_RUNNING to ensure correct
         // behavior in multi-threaded environments.
@@ -95,10 +95,10 @@ public final class ObjectCleaner {
             // - https://github.com/netty/netty/issues/7290
             // - https://bugs.openjdk.java.net/browse/JDK-7008595
             cleanupThread.setContextClassLoader(null);
-            cleanupThread.setName("ReferenceCleanerThread");
+            cleanupThread.setName(CLEANER_THREAD_NAME);
 
-            // This Thread is not a daemon as it will die once all references to the registered Threads will go away
-            // and its important to always invoke all cleanup tasks as these may free up memory etc.
+            // This Thread is not a daemon as it will die once all references to the registered Objects will go away
+            // and its important to always invoke all cleanup tasks as these may free up direct memory etc.
             cleanupThread.setDaemon(false);
             cleanupThread.start();
         }
@@ -108,10 +108,10 @@ public final class ObjectCleaner {
         // Only contains a static method.
     }
 
-    private static final class AtomaticCleanerReference extends WeakReference<Object> {
+    private static final class AutomaticCleanerReference extends WeakReference<Object> {
         private final Runnable cleanupTask;
 
-        AtomaticCleanerReference(Object referent, Runnable cleanupTask) {
+        AutomaticCleanerReference(Object referent, Runnable cleanupTask) {
             super(referent, REFERENCE_QUEUE);
             this.cleanupTask = cleanupTask;
         }
