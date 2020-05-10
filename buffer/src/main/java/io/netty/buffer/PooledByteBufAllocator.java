@@ -201,6 +201,14 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
                                   int tinyCacheSize, int smallCacheSize, int normalCacheSize,
                                   boolean useCacheForAllThreads, int directMemoryCacheAlignment) {
         super(preferDirect);
+
+
+
+        System.out.println("创建PooledByteBufAllocator对象时的线程名称" + Thread.currentThread().getName());
+        System.out.println("创建PooledByteBufAllocator对象时的类加载器" + Thread.currentThread().getClass().getClassLoader());
+
+
+
         threadCache = new PoolThreadLocalCache(useCacheForAllThreads);
         this.tinyCacheSize = tinyCacheSize;
         this.smallCacheSize = smallCacheSize;

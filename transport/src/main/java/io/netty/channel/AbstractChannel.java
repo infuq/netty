@@ -478,7 +478,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 try {
                     eventLoop.execute(new Runnable() {
                         @Override
-                        public void run() {
+                        public void run() {//执行线程NioEventLoop
                             register0(promise);
                         }
                     });

@@ -1291,7 +1291,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             onUnhandledInboundException(cause);
         }
-
+        
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
             onUnhandledInboundMessage(msg);
@@ -1366,6 +1366,8 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
         @Override
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+
+            System.out.println("写数据线程名称:" + Thread.currentThread().getName());
             unsafe.write(msg, promise);
         }
 

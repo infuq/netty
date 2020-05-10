@@ -15,6 +15,7 @@
  */
 package io.netty.channel.nio;
 
+import com.alibaba.fastjson.JSON;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelException;
 import io.netty.channel.EventLoop;

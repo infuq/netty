@@ -90,6 +90,7 @@ public class DefaultChannelPromise extends DefaultPromise<Void> implements Chann
 
     @Override
     public ChannelPromise addListener(GenericFutureListener<? extends Future<? super Void>> listener) {
+        System.out.println("线程名称:" + Thread.currentThread().getName());
         super.addListener(listener);
         return this;
     }

@@ -357,9 +357,10 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
         // This method is invoked before channelRegistered() is triggered.  Give user handlers a chance to set up
         // the pipeline in its channelRegistered() implementation.
+        // 执行线程 NioEventLoop
         channel.eventLoop().execute(new Runnable() {
             @Override
-            public void run() {
+            public void run() {// 执行线程 NioEventLoop
                 if (regFuture.isSuccess()) {
                     channel.bind(localAddress, promise).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
                 } else {

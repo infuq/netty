@@ -174,10 +174,10 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 if (handler != null) {
                     pipeline.addLast(handler);
                 }
-
+                // 执行线程 NioEventLoop
                 ch.eventLoop().execute(new Runnable() {
                     @Override
-                    public void run() {
+                    public void run() {// 执行线程 NioEventLoop
                         pipeline.addLast(new ServerBootstrapAcceptor(
                                 ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
                     }
